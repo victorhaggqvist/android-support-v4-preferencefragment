@@ -6,11 +6,18 @@ buildscript {
 
     dependencies {
         classpath 'com.android.tools.build:gradle:1.3.0'
+        classpath 'com.adaptc.gradle:nexus-workflow:0.6'
     }
 }
 
 apply plugin: 'android-library'
 apply plugin: 'maven'
+apply plugin: 'signing'
+apply plugin: 'nexus-workflow'
+
+group = "com.snilius.android-support-v4-preferencefragment"
+archivesBaseName = "android-support-v4-preferencefragment"
+version = "0.1.0"
 
 version = VERSION
 group = GROUP
@@ -41,12 +48,56 @@ android {
     }
 }
 
-uploadArchives {
-    repositories.mavenDeployer {
-        repository(url: "file:maven-repository/")
+configurations {
+    archives {
+        extendsFrom configurations.default
+    }
+}
 
-        pom.groupId = GROUP
-        pom.artifactId = ARTIFACT_ID
-        pom.version = VERSION
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            pom.project {
+                name 'android-support-v4-preferencefragment'
+                packaging 'jar'
+                groupId group
+                artifactId archivesBaseName
+                // optionally artifactId can be defined here
+                description 'Unofficial PreferenceFragment compatibility layer'
+                url 'https://github.com/victorhaggqvist/android-support-v4-preferencefragment'
+
+                scm {
+                    connection 'scm:git:https://github.com/victorhaggqvist/android-support-v4-preferencefragment.git'
+                    developerConnection 'scm:git:https://github.com/victorhaggqvist/android-support-v4-preferencefragment.git'
+                    url 'https://github.com/victorhaggqvist/android-support-v4-preferencefragment'
+                }
+
+                licenses {
+                    license {
+                        name 'The Apache License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id 'atriix'
+                        name 'Victor Häggqvist'
+                        email 'victor@snilius.com'
+                    }
+                }
+            }
+        }
     }
 }
